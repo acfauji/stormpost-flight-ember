@@ -1,16 +1,4 @@
-export function createCameraRig() {
-  return { roll: 0, pitch: 0, horizonY: 0.39, shake: 0, zoom: 1 };
-}
-
-export function updateCamera(camera, plane, weather, dt) {
-  const smoothing = Math.min(1, dt * 2.8);
-  camera.roll += (plane.roll * 0.42 - camera.roll) * smoothing;
-  camera.pitch += (plane.pitch * 0.72 - camera.pitch) * smoothing;
-  camera.shake += ((weather.turbulence ?? 0) * 1.6 - camera.shake) * Math.min(1, dt * 5);
-  camera.zoom = 1 + Math.max(0, plane.airspeed - 120) * 0.0007;
-  return camera;
-}
-
-export function cameraOffset(camera, time) {
-  return { x: Math.sin(time * 28) * camera.shake, y: Math.cos(time * 23) * camera.shake * 0.6 };
-}
+// Spring-damped chase tracking and eye-level cockpit camera rigs.
+import {transform} from './webglEngine.js';
+export function aircraftPoint(s,p){let m=transform(s.pos,[s.pitch,s.heading,s.roll]);return [0,1,2].map(i=>m[i]*p[0]+m[4+i]*p[1]+m[8+i]*p[2]+m[12+i]);}
+export function createCameraRig(){let eye=null;return {reset(){eye=null;},update(s,dt){let cockpit=s.camera==='cockpit',crashed=s.status==='crashed';let desired=aircraftPoint(s,cockpit?[0,2.5,-10.5]:crashed?[62,27,79]:[7,18,72]);if(!eye||s.paused||s.checkpoint)eye=desired;else eye=eye.map((v,i)=>v+(desired[i]-v)*(1-Math.exp(-dt*5)));let target=cockpit?aircraftPoint(s,[0,2,-150]):crashed?s.pos:aircraftPoint(s,[0,0,-75]);let bank=cockpit?s.roll:s.roll*.3;return {eye,target,up:[-Math.sin(bank),Math.cos(bank),0],fov:cockpit?1.12:.9};}};}

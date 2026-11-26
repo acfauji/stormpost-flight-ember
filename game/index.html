@@ -2,25 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#102b38">
-<meta name="description" content="A storm rescue flight across a volcanic archipelago.">
-<title>STORMPOST — Islewatch Flight</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230c2230'/%3E%3Cpath d='M4 17h9l3-7 3 12 3-5h6' stroke='%236fe3d2' stroke-width='2.4' fill='none'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="STORMPOST: an original WebGL twin-turboprop rescue flight across a volcanic archipelago.">
+<title>STORMPOST — Islewatch Rescue Flight</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M2 18l12-3 2-12 2 12 12 3-12 2-2 9-2-9z' fill='%23ff9933'/%3E%3C/svg%3E">
 <style>
-  :root { color-scheme: dark; background: #102632; }
-  * { box-sizing: border-box; }
-  html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-  body { background: #102632; font-family: Georgia, 'Times New Roman', serif; }
-  #flight-view { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; outline: none; }
-  #flight-status { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-  @media (max-width: 700px) { #flight-view { cursor: default; } }
-  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#17313d;color:#d8efdf}canvas{position:absolute;inset:0;width:100%;height:100%}#flight-view{touch-action:none;cursor:crosshair}#instruments{pointer-events:none}#flight-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 </style>
 </head>
 <body>
-<canvas id="flight-view" role="img" aria-label="STORMPOST rescue flight over volcanic islands. Use keyboard or hold and drag to fly."></canvas>
-<p id="flight-status" role="status" aria-live="polite">STORMPOST. Press Enter to launch the rescue flight.</p>
+<canvas id="flight-view" aria-label="STORMPOST playable three-dimensional rescue flight. W S pitch, A D bank; hold mouse to fly; C cockpit."></canvas>
+<canvas id="instruments" aria-hidden="true"></canvas>
+<p id="flight-status" role="status" aria-live="polite">Flight active</p>
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>

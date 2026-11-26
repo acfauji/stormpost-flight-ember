@@ -5,11 +5,12 @@ import { attemptDrop, chooseRoute, CONTRACTS, createMissionDirector, startMissio
 import { createRenderer } from './renderer.js';
 import { createSoundEngine } from './audio.js';
 import { createWeather, sampleWeather } from './weather.js';
+import { replaySortie } from './sortieReplay.js';
 
 const canvas = document.getElementById('flight-view');
 const status = document.getElementById('flight-status');
 const query = new URLSearchParams(location.search);
-const variant = query.get('variant') === 'ember' ? 'ember' : 'teal';
+const variant = query.get('variant') === 'teal' ? 'teal' : 'ember';
 const terrain = createArchipelago();
 const weather = createWeather(73);
 const camera = createCameraRig();
@@ -56,6 +57,13 @@ function stageScene(name, launch = true) {
   };
   if (!scenarios[name]) return false;
   Object.assign(plane, scenarios[name]);
+  if (['cover', 'storm', 'runway'].includes(name)) {
+    const replay = replaySortie(terrain, name);
+    plane = replay.plane;
+    Object.assign(weather, replay.weather);
+    elapsed = replay.seconds;
+    if (name === 'runway') { plane.gearDown = true; plane.flaps = .78; }
+  }
   if (name === 'storm') {
     mission = createMissionDirector('rescue');
     mission.phase = 'outbound';
@@ -202,7 +210,8 @@ function stateSnapshot() {
     throttle: Number(plane.throttle.toFixed(2)), flaps: Number(plane.flaps.toFixed(2)),
     fuel: Math.round(plane.fuel), hull: Math.round(plane.hull), roll: Number(plane.roll.toFixed(3)),
     forward: Math.round(plane.forward), crossTrack: Math.round(plane.crossTrack),
-    event: mission.event, grade: mission.grade, route: mission.routeChoice,
+    event: mission.event, grade: mission.grade, route: mission.routeChoice, variant,
+    flightSeconds: Number(elapsed.toFixed(2)),
   };
 }
 

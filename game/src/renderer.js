@@ -16,7 +16,7 @@ function project(game, worldX, worldZ, elevation = 0) {
   const depth = worldZ - game.plane.forward;
   const perspective = 800 / Math.max(260, depth + 370);
   const x = game.width * 0.5 + (worldX - game.plane.crossTrack) * perspective * 0.43;
-  const y = game.horizon + perspective * (230 + elevation * 0.31) + perspective * perspective * 48;
+  const y = game.horizon + perspective * (game.plane.altitude - elevation) * .12 + perspective * perspective * 30;
   return { x, y, scale: perspective, depth };
 }
 
@@ -47,7 +47,7 @@ function drawSky(ctx, game) {
   }
   if (weather.severity > 0.14) {
     const cloud = ctx.createRadialGradient(w * .53, horizon - 68, 20, w * .53, horizon - 68, w * .52);
-    cloud.addColorStop(0, `rgba(30,38,55,${weather.severity * .62})`); cloud.addColorStop(1, 'rgba(30,38,55,0)');
+    cloud.addColorStop(0, `rgba(12,20,39,${Math.min(.95, weather.severity * 1.3)})`); cloud.addColorStop(.65, `rgba(20,26,43,${weather.severity * .8})`); cloud.addColorStop(1, 'rgba(30,38,55,0)');
     ctx.fillStyle = cloud; ctx.fillRect(0, 0, w, horizon + 20);
     for (let i = 0; i < 5; i++) {
       const cx = w * .32 + i * 103 + Math.sin(time * .15 + i) * 14;
@@ -125,6 +125,10 @@ function drawRunway(ctx, game, runway) {
   const far = project(game, runway.x, runway.z - runway.length / 2, runway.elevation);
   if (near.depth < -500 || far.depth < -500 || near.depth > 8000) return;
   const halfNear = runway.width * near.scale * .48; const halfFar = runway.width * far.scale * .48;
+  // Exposed basalt shelf beneath the elevated strip; lights remain on top.
+  const cliff = Math.min(62, runway.elevation * far.scale * .22);
+  polygon(ctx, [[far.x - halfFar * 1.3, far.y], [far.x + halfFar * 1.3, far.y], [far.x + halfFar * 1.05, far.y + cliff], [far.x - halfFar * .85, far.y + cliff * .82]], '#26363c', '#746154', 1);
+  polygon(ctx, [[near.x - halfNear * 1.3, near.y], [near.x + halfNear * 1.3, near.y], [far.x + halfFar * 1.3, far.y], [far.x - halfFar * 1.3, far.y]], '#4d4b48');
   polygon(ctx, [[near.x - halfNear, near.y], [near.x + halfNear, near.y], [far.x + halfFar, far.y], [far.x - halfFar, far.y]], '#28383c', 'rgba(250,223,161,.82)', 1.2);
   ctx.strokeStyle = '#e9d5a1'; ctx.lineWidth = 2;
   for (let i = 1; i <= 5; i++) {
@@ -150,10 +154,11 @@ function drawRunway(ctx, game, runway) {
 }
 
 function drawBeacon(ctx, game, target, color, label) {
-  const p = project(game, target.x, target.z, 0);
+  const p = project(game, target.x, target.z, label === 'ROUTE RING' ? 200 : 0);
   if (p.depth < 70 || p.depth > 6300) return;
   const radius = clamp(54 * p.scale, 8, 72);
-  ctx.save(); ctx.translate(p.x, p.y - radius * .35);
+  const centerY = Math.min(p.y - radius * .35, game.height - 130 - radius * 2.4);
+  ctx.save(); ctx.translate(p.x, centerY);
   ctx.strokeStyle = color; ctx.lineWidth = Math.max(2, p.scale * 4); ctx.shadowColor = color; ctx.shadowBlur = 20;
   ctx.beginPath(); ctx.ellipse(0, 0, radius, radius * 1.14, 0, 0, TAU); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(0, radius * 1.14); ctx.lineTo(0, radius * 2.4); ctx.stroke();
@@ -167,7 +172,7 @@ function drawParachute(ctx, game) {
   if (!crate || crate.scored) return;
   const p = project(game, game.mission.beacon.x, game.mission.beacon.z, 70);
   const drop = clamp((1.55 - crate.timer) / 1.55, 0, 1);
-  const y = p.y - 70 * p.scale + drop * 105 * p.scale;
+  const y = Math.min(p.y - 70 * p.scale + drop * 105 * p.scale, game.height - 145);
   const x = p.x + Math.sin(game.time * 1.4) * 12 * p.scale;
   const s = clamp(p.scale, .25, 1.2);
   ctx.save(); ctx.strokeStyle = '#fff0c5'; ctx.lineWidth = 2 * s;
@@ -180,7 +185,7 @@ function drawParachute(ctx, game) {
 function drawRain(ctx, game) {
   const density = Math.round(game.weather.severity * 90);
   if (density < 1) return;
-  ctx.strokeStyle = `rgba(200,232,239,${.12 + game.weather.severity * .16})`; ctx.lineWidth = 1;
+  ctx.strokeStyle = `rgba(213,239,255,${.18 + game.weather.severity * .4})`; ctx.lineWidth = 1.3;
   for (let i = 0; i < density; i++) {
     const x = (i * 137 + Math.sin(game.time * 7 + i) * 70 + game.time * 115) % game.width;
     const y = (i * 83 + game.time * 280) % game.height;
@@ -203,7 +208,7 @@ function drawScene(ctx, game) {
   drawRain(ctx, game);
   if (game.weather.lightning > 0) { ctx.fillStyle = `rgba(226,239,255,${game.weather.lightning * .22})`; ctx.fillRect(0, 0, game.width, game.height); }
   drawParachute(ctx, game);
-  drawRescueAircraft(ctx, game.width * .5, game.height * .58, game.height / 720, game.plane.roll, game.time, game.plane.flaps, game.plane.hull);
+  drawRescueAircraft(ctx, game.width * .5, game.height * .62, game.height / 720, game.plane.roll, game.time, game.plane.flaps, game.plane.hull);
 }
 
 export function createRenderer(canvas) {

@@ -1,6 +1,17 @@
 // Cockpit canopy structure, glareshield and five illuminated, physics-driven flight instruments.
-import {mesh,rod,box,torus,transform,multiply} from './webglEngine.js';
-export function buildCockpit(engine){let m=mesh(),frame=[.09,.14,.15];for(let s of [-1,1]){rod(m,[s*3.5,-1,-13],[s*3.8,6,-16],.18,frame,8);rod(m,[s*3.8,6,-16],[s*.8,6.3,-21],.18,frame,8);}rod(m,[-4,6,-16],[4,6,-16],.19,frame,8);rod(m,[0,6.2,-21],[0,1,-23],.1,frame,8);box(m,[0,-.6,-15],[8,1,3],frame);box(m,[0,.1,-21],[4.8,.5,5],[.92,.31,.06]);let g=engine.upload(m),dial=mesh(),needle=mesh();rod(dial,[0,0,-.06],[0,0,0],.55,[.025,.06,.065],32);torus(dial,[0,0,.015],.55,.035,[.4,.55,.48],36);for(let i=0;i<12;i++){let a=i*Math.PI/6;rod(dial,[Math.sin(a)*.44,Math.cos(a)*.44,.03],[Math.sin(a)*.5,Math.cos(a)*.5,.03],.008,[.7,.95,.8],4);}rod(needle,[0,-.1,.06],[0,.4,.06],.015,[1,.7,.2],5);let dg=engine.upload(dial),ng=engine.upload(needle);return {draw(s){let base=transform(s.pos,[s.pitch,s.heading,s.roll]);engine.draw(g,base);let values=[s.speed/125,s.roll/3+.5,s.pos[1]/1500,(s.heading/(Math.PI*2)+1.5)%1,s.throttle];for(let i=0;i<5;i++){let mount=multiply(base,transform([(i-2)*1.35,.5,-16.8]));engine.draw(dg,mount,{emission:.3});engine.draw(ng,multiply(mount,transform([0,0,0],[0,0,2.4-values[i]*4.8])),{emission:.5});}}};}
+import {mesh,rod,box,transform} from './webglEngine.js';
+export function buildCockpit(engine){
+ const frame=mesh(),slate=[.07,.11,.14];
+ for(let side of [-1,1]){
+  rod(frame,[side*3.7,-1,-13],[side*4,6,-16],.15,slate,8);
+  rod(frame,[side*4,6,-16],[side*.9,6.3,-21],.15,slate,8);
+ }
+ rod(frame,[-4,6,-16],[4,6,-16],.14,slate,8);
+ rod(frame,[0,6.2,-21],[0,3.7,-23],.055,slate,8);
+ box(frame,[0,-.8,-15],[8,.6,3],slate);
+ const geometry=engine.upload(frame);
+ return {draw(s){engine.draw(geometry,transform(s.pos,[s.pitch,s.heading,s.roll]));}};
+}
 export function drawCockpitInstruments(ctx,s,w,h){
  const top=h*.70,R=Math.min(w*.061,h*.097),cy=top+R+35;
  ctx.save();
@@ -36,7 +47,7 @@ export function drawCockpitInstruments(ctx,s,w,h){
  };
  dial(w*.19,'AIRSPEED',s.speed*1.944,240,'KNOTS');
  dial(w*.50,'ALTIMETER',s.pos[1]*3.281,4000,'FEET');
- dial(w*.655,'HEADING',(s.heading*180/Math.PI+540)%360,360,'MAG');
+ dial(w*.655,'HEADING',((180-s.heading*180/Math.PI)%360+360)%360,360,'MAG');
  dial(w*.81,'ENGINE',s.throttle*100,100,'RPM %');
  const x=w*.345;bezel(x);ctx.save();ctx.beginPath();ctx.arc(x,cy,R-2,0,Math.PI*2);ctx.clip();
  ctx.translate(x,cy);ctx.rotate(s.roll);ctx.translate(0,s.pitch*100);

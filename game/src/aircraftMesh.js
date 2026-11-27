@@ -30,27 +30,26 @@ export function buildAircraft(engine){
   rod(nacelle,[side*9,1.4,-9],[side*9,1.4,-10],.9,metal,20,.3);
   wings.push(engine.upload(wing));engines.push(engine.upload(nacelle));
   // Wide-set main wheels remain visible below the nacelles on short final.
-  rod(gear,[side*9,-.2,0],[side*9,-6.4,1],.25,metal,10);
-  rod(gear,[side*6,-1.7,2],[side*9,-5.4,1],.16,metal,8);
-  ellipsoid(gear,[side*9,-6.6,1],[.85,1.2,1.2],dark,12,16);
-  ellipsoid(gear,[side*9.75,-6.6,1],[.08,.45,.45],metal,8,12);
+  rod(gear,[side*9,-.2,3],[side*9,-6.4,5],.34,[.76,.79,.70],12);rod(gear,[side*9,-2.5,4],[side*9,-4.7,4.6],.43,[.94,.68,.24],10);
+  rod(gear,[side*6,-1.7,3],[side*9,-5.4,5],.16,metal,8);
+  ellipsoid(gear,[side*9,-6.6,5],[.85,1.2,1.2],dark,12,16);
+  ellipsoid(gear,[side*9.75,-6.6,5],[.08,.45,.45],metal,8,12);
  }
  rod(gear,[0,-1.6,-9],[0,-6,-9],.22,metal,10);
  ellipsoid(gear,[0,-6.2,-9],[.6,.95,.95],dark,10,16);
  rod(disc,[0,0,-.025],[0,0,.025],4.7,[.63,.77,.79],56);
  box(blade,[0,0,0],[.45,8.7,.12],dark);box(blade,[0,0,0],[8.7,.45,.12],dark);
- box(flap,[0,0,0],[7,.22,2.6],orange);box(tail,[0,0,0],[10,.16,1.3],white);
- rod(trail,[0,0,0],[0,0,36],.085,[.75,.86,.89],6,.015);
+ box(flap,[0,0,1.8],[8,.26,3.6],[.95,.60,.13]);box(flap,[0,.16,2.9],[8,.07,.45],dark);box(tail,[0,0,0],[10,.16,1.3],white);
+ rod(trail,[0,0,0],[0,0,36],.085,[.85,.91,.88],6,.015);
  const nav=mesh();ellipsoid(nav,[0,0,0],[.30,.25,.48],[1,.035,.025],10,14);
  const nav2=mesh();ellipsoid(nav2,[0,0,0],[.30,.25,.48],[.03,1,.49],10,14);
  const g=Object.fromEntries(Object.entries({hull,canopy,gear,disc,blade,flap,tail,trail,nav,nav2}).map(([k,m])=>[k,engine.upload(m)]));
- let gearTravel=0;
+ 
  return function drawAircraft(s,t){
   const base=transform(s.pos,[s.pitch,s.heading,s.roll]),crashed=s.status==='crashed';
   const local=(p,r=[0,0,0],scale=[1,1,1])=>multiply(base,transform(p,r,scale));
   engine.draw(g.hull,base,{metal:.7});engine.draw(g.canopy,base,{alpha:crashed?.60:.90,metal:1});
-  gearTravel+=(Number(s.gear)-gearTravel)*.25;
-  if(s.paused)gearTravel=Number(s.gear);
+  const gearTravel=crashed?0:Number(s.gear);
   if(gearTravel>.015)engine.draw(g.gear,local([0,0,0],[0,0,(1-gearTravel)*.55],[1,Math.max(.1,gearTravel),1]),{metal:.6});
   for(let [i,side] of [-1,1].entries()){
    const broken=crashed&&side<0;
@@ -60,13 +59,13 @@ export function buildAircraft(engine){
    const propPose=local([side*9+(broken?-3:0),1.4+(broken?-3:0),-9],[broken?.28:0,0,crashed?.31:t*35]);
    if(!crashed&&s.speed>20)engine.draw(g.disc,propPose,{alpha:.15,metal:.8});
    else engine.draw(g.blade,propPose,{metal:.3});
-   engine.draw(g.flap,local([side*15,1,4.7],[s.flaps*.48+side*s.roll*.15,0,broken?-.5:0]),{metal:.5});
+   engine.draw(g.flap,local([side*14,1,4],[s.flaps*.70+side*s.roll*.15,0,broken?-.5:0]),{metal:.5});
    if(!broken){
     const light=side<0?g.nav:g.nav2;
     engine.draw(light,local([side*22,1,2]),{emission:2.2});
     engine.draw(light,local([side*22,1,2],[0,0,0],[3,3,3]),{emission:2,alpha:.09,soft:true});
    }
-   if(s.speed>35&&s.status==='flying')engine.draw(g.trail,local([side*21,1.2,4]),{alpha:.18});
+   if(s.speed>35&&s.status==='flying')engine.draw(g.trail,local([side*21,1.2,4]),{alpha:.38,emission:.12});
   }
   engine.draw(g.tail,local([0,1.5,15],[s.pitch*1.8,0,0]),{metal:.4});
  };

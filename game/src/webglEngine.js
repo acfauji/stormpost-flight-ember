@@ -9,7 +9,7 @@ export const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1
 export const unit=a=>mul(a,1/(Math.hypot(...a)||1));
 export function identity(){return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];}
 export function multiply(a,b){let r=Array(16).fill(0);for(let c=0;c<4;c++)for(let row=0;row<4;row++)for(let k=0;k<4;k++)r[c*4+row]+=a[k*4+row]*b[c*4+k];return r;}
-export function transform(pos=[0,0,0],rotation=[0,0,0],scale=[1,1,1]){let [p,h,r]=rotation,cp=Math.cos(p),sp=Math.sin(p),ch=Math.cos(h),sh=Math.sin(h),cr=Math.cos(r),sr=Math.sin(r);let rx=[1,0,0,0,0,cp,sp,0,0,-sp,cp,0,0,0,0,1],ry=[ch,0,-sh,0,0,1,0,0,sh,0,ch,0,0,0,0,1],rz=[cr,sr,0,0,-sr,cr,0,0,0,0,1,0,0,0,0,1];let m=multiply(ry,multiply(rx,rz));for(let c=0;c<3;c++)for(let j=0;j<3;j++)m[c*4+j]*=scale[c];m[12]=pos[0];m[13]=pos[1];m[14]=pos[2];return m;}
+export function transform(pos=[0,0,0],rotation=[0,0,0],scale=[1,1,1]){let [p,h,r]=rotation,cp=Math.cos(p),sp=Math.sin(p),ch=Math.cos(h),sh=Math.sin(h),cr=Math.cos(r),sr=Math.sin(r);let rx=[1,0,0,0,0,cp,sp,0,0,-sp,cp,0,0,0,0,1],ry=[ch,0,sh,0,0,1,0,0,-sh,0,ch,0,0,0,0,1],rz=[cr,sr,0,0,-sr,cr,0,0,0,0,1,0,0,0,0,1];let m=multiply(ry,multiply(rx,rz));for(let c=0;c<3;c++)for(let j=0;j<3;j++)m[c*4+j]*=scale[c];m[12]=pos[0];m[13]=pos[1];m[14]=pos[2];return m;}
 export function lookAt(eye,target,up){let z=unit(sub(eye,target)),x=unit(cross(up,z)),y=cross(z,x);return [x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-dot(x,eye),-dot(y,eye),-dot(z,eye),1];}
 export function perspective(fov,aspect,near=.5,far=15000){let f=1/Math.tan(fov/2),k=1/(near-far);return [f/aspect,0,0,0,0,f,0,0,0,0,(far+near)*k,-1,0,0,2*far*near*k,0];}
 export function mesh(){return {v:[],n:[],c:[]};}
@@ -48,7 +48,7 @@ export function createEngine(canvas){
  const program=link(surfaceVertex,surfaceFragment),sky=link(skyVertex,skyFragment);
  const names=['vp','model','time','water','eye','emission','alpha','storm','soft','terrain','metal','cloud'];
  const loc=Object.fromEntries(names.map(k=>[k,gl.getUniformLocation(program,k)]));
- const skyNames=['forward','right','up','aspect','field','storm'];
+ const skyNames=['forward','right','up','aspect','field','storm','time'];
  const skyLoc=Object.fromEntries(skyNames.map(k=>[k,gl.getUniformLocation(sky,k)]));
  const attrs=['p','n','c'].map(k=>gl.getAttribLocation(program,k));
  const skyAttr=gl.getAttribLocation(sky,'p'),sb=gl.createBuffer();
@@ -74,7 +74,7 @@ export function createEngine(canvas){
   const forward=unit(sub(camera.target,camera.eye)),right=unit(cross(forward,camera.up)),up=cross(right,forward);
   gl.uniform3fv(skyLoc.forward,forward);gl.uniform3fv(skyLoc.right,right);gl.uniform3fv(skyLoc.up,up);
   gl.uniform1f(skyLoc.aspect,canvas.width/canvas.height);gl.uniform1f(skyLoc.field,Math.tan((camera.fov||.92)/2));
-  gl.uniform1f(skyLoc.storm,storm);gl.drawArrays(gl.TRIANGLES,0,6);
+  gl.uniform1f(skyLoc.storm,storm);gl.uniform1f(skyLoc.time,t);gl.drawArrays(gl.TRIANGLES,0,6);
   gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.useProgram(program);
   view=multiply(perspective(camera.fov||.92,canvas.width/canvas.height),lookAt(camera.eye,camera.target,camera.up));
   gl.uniformMatrix4fv(loc.vp,false,view);gl.uniform3fv(loc.eye,camera.eye);

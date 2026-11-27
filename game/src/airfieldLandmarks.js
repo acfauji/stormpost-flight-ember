@@ -31,7 +31,7 @@ export function buildLandmarks(engine,runway,height){
  for(let side of [-1,1])for(let j=0;j<3;j++){
   box(buildings,[runway.x+side*19,runway.y+.85,runway.z0-220-j*90],[5,.12,30],ivory);
  }
- for(let z=runway.z0-70;z>runway.z1+30;z-=45)ellipsoid(lamps,[runway.x,runway.y+1,z],[.8,.35,.8],[.68,.88,1],6,8);
+ for(let z=runway.z0-70;z>runway.z1+30;z-=45)ellipsoid(lamps,[runway.x,runway.y+1,z],[.12,.07,.12],[.68,.88,1],6,8);
  const g=Object.fromEntries(Object.entries({buildings,lamps,radar,sock,beam}).map(([k,m])=>[k,engine.upload(m)]));
  return {draw(t){
   engine.draw(g.buildings);engine.draw(g.lamps,undefined,{emission:1.6});

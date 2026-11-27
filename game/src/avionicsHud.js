@@ -1,13 +1,13 @@
 // Translucent flight-deck widgets: sparse primary data, navigation and three-contract debrief.
 import {contracts} from './missionDirector.js';
-const cyan='#a9e5e9',amber='#ffca83',ink='rgba(8,22,30,.38)';
+const cyan='#a9e5e9',amber='#ffca83',ink='rgba(9,17,25,0.78)';
 function glass(ctx,x,y,w,h){
  ctx.fillStyle=ink;ctx.strokeStyle='rgba(176,217,218,.25)';ctx.lineWidth=1;
  ctx.beginPath();ctx.roundRect(x,y,w,h,6);ctx.fill();ctx.stroke();
  ctx.strokeStyle='rgba(246,204,142,.65)';ctx.beginPath();ctx.moveTo(x+12,y);ctx.lineTo(x+39,y);ctx.stroke();
 }
 function text(ctx,content,x,y,size=12,color=cyan,weight='400'){
- ctx.fillStyle=color;ctx.font=weight+' '+size+'px monospace';ctx.fillText(content,x,y);
+ ctx.fillStyle=color;ctx.font=weight+' '+size+'px monospace';ctx.shadowColor='rgba(0,0,0,.8)';ctx.shadowBlur=2;ctx.shadowOffsetY=1;ctx.fillText(content,x,y);ctx.shadowBlur=0;ctx.shadowOffsetY=0;
 }
 export function drawAvionics(ctx,s,w,h){
  ctx.save();ctx.scale(w/1280,h/800);ctx.textBaseline='alphabetic';ctx.textAlign='left';
@@ -15,7 +15,7 @@ export function drawAvionics(ctx,s,w,h){
  text(ctx,'ISLEWATCH  /  TWIN-TURBOPROP',41,76,11,amber);
  if(s.status!=='crashed'){glass(ctx,920,22,336,70);text(ctx,contracts[s.contract-1]||contracts[0],936,48,16,'#fff0d6','700');
  text(ctx,s.route,936,74,11,cyan);text(ctx,'SCORE '+s.score,1135,74,11,amber,'700');}
- const speed=Math.round(s.speed*1.944),alt=Math.round(s.pos[1]*3.281),heading=Math.round((s.heading*180/Math.PI+540)%360);
+ const speed=Math.round(s.speed*1.944),alt=Math.round(s.pos[1]*3.281),heading=Math.round(((180-s.heading*180/Math.PI)%360+360)%360);
  ctx.textAlign='center';if(s.status!=='crashed'){glass(ctx,590,24,100,58);text(ctx,String(heading).padStart(3,'0')+'°',640,51,23,cyan,'700');text(ctx,'HDG MAG',640,69,10);}
  for(let [x,label,value,unit] of s.status==='crashed'?[]:[[188,'IAS',speed,'KT'],[1092,'ALT',alt,'FT']]){
   ctx.strokeStyle='rgba(173,231,224,.42)';ctx.lineWidth=1;
@@ -39,7 +39,7 @@ export function drawAvionics(ctx,s,w,h){
   text(ctx,'FUEL '+Math.round(s.fuel)+'%   HULL '+Math.round(s.hull)+'%',39,693,12,'#e4f5ed','700');
   text(ctx,'CROSSWIND '+Math.abs(s.wind).toFixed(1)+' M/S',39,717,10);
   text(ctx,'C  COCKPIT     V  ROUTE',39,738,10,'#94b4bc');
-  const rx=1190,ry=670;ctx.fillStyle='rgba(8,22,30,.30)';ctx.beginPath();ctx.arc(rx,ry,58,0,Math.PI*2);ctx.fill();
+  const rx=1190,ry=670;ctx.fillStyle=ink;ctx.beginPath();ctx.arc(rx,ry,58,0,Math.PI*2);ctx.fill();
   ctx.strokeStyle='rgba(139,203,205,.32)';for(let r of [20,39,58]){ctx.beginPath();ctx.arc(rx,ry,r,0,Math.PI*2);ctx.stroke();}
   ctx.fillStyle=s.storm?'rgba(255,182,83,.33)':'rgba(92,180,160,.25)';ctx.beginPath();ctx.ellipse(rx-12,ry-14,25,17,-.5,0,Math.PI*2);ctx.fill();
   ctx.strokeStyle=cyan;ctx.beginPath();ctx.moveTo(rx,ry-8);ctx.lineTo(rx-4,ry+5);ctx.lineTo(rx+4,ry+5);ctx.closePath();ctx.stroke();
@@ -49,7 +49,7 @@ export function drawAvionics(ctx,s,w,h){
  if(s.warning&&s.status==='flying'){
   glass(ctx,425,112,430,29);text(ctx,s.warning,640,132,12,amber,'700');
  }
- if(s.event&&s.status==='flying')text(ctx,s.event,640,s.camera==='cockpit'?522:588,12,amber);
+ if(s.event&&s.status==='flying'){const ey=s.camera==='cockpit'?515:165;glass(ctx,370,ey-19,540,30);text(ctx,s.event,640,ey+1,11,amber);}
  if(s.status!=='flying'){
   const cx=s.status==='crashed'?334:640;glass(ctx,cx-310,635,620,119);
   const lost=s.status==='crashed';text(ctx,lost?'AIRFRAME LOST  /  HULL 0%':s.flare,cx,661,20,lost?'#ffba80':cyan,'700');
@@ -59,7 +59,7 @@ export function drawAvionics(ctx,s,w,h){
  }
  if(s.status==='crashed'){ctx.textAlign='left';glass(ctx,24,110,298,86);text(ctx,'IAS '+speed+' KT  ALT '+alt+' FT',40,135,12);text(ctx,'HDG '+heading+'°  SCORE '+s.score,40,157,12,amber);text(ctx,'FUEL '+Math.round(s.fuel)+'%  HULL '+Math.round(s.hull)+'%',40,179,12);}
  if(s.status!=='crashed'){
- ctx.textAlign='center';ctx.fillStyle='rgba(5,17,23,.35)';ctx.fillRect(0,776,1280,24);
+ ctx.textAlign='center';ctx.fillStyle=ink;ctx.fillRect(0,776,1280,24);
  text(ctx,'W/S PITCH   A/D BANK   SHIFT/CTRL POWER   F FLAPS   G GEAR   C COCKPIT   SPACE DROP   V ROUTE   B BRAKE   P PAUSE',640,792,10,'#f2cb93');
  }
  ctx.restore();

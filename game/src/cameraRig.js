@@ -8,7 +8,7 @@ export function createCameraRig(){
  let eye=null;
  return {reset(){eye=null;},update(s,dt){
   const cockpit=s.camera==='cockpit',crashed=s.status==='crashed';
-  const desired=aircraftPoint(s,cockpit?[0,2.5,-10.5]:crashed?[86,18,-34]:s.gear?[0,14,64]:[16,19,77]);
+  const desired=aircraftPoint(s,cockpit?[0,2.5,-10.5]:crashed?[78,20,72]:s.gear?[0,14,64]:[16,19,77]);
   // A stationary renderer still follows flight state; no stored camera can lag a long tick batch.
   if(!eye||s.paused||Math.hypot(...desired.map((v,i)=>v-eye[i]))>40)eye=desired;
   else eye=eye.map((v,i)=>v+(desired[i]-v)*(1-Math.exp(-dt*8)));

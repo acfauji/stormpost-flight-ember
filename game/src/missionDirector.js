@@ -13,6 +13,7 @@ export function createMissionDirector(engine){
  const ground=terrainHeight(rescueZone.x,rescueZone.z);
  box(beacon,[0,.8,0],[2,1.6,2],[.4,.17,.07]);
  rod(beacon,[0,0,0],[0,3,0],.27,[1,.22,.03],8,.08);
+ ellipsoid(beacon,[0,3.2,0],[.48,.6,.48],[1,.72,.28],8,12);
  for(let i=0;i<24;i++){
   const a=i*Math.PI/12,b=(i+1)*Math.PI/12;
   for(let j=0;j<6;j++){
@@ -58,10 +59,14 @@ export function createMissionDirector(engine){
   }
  },draw(s){
   for(let i=0;i<gates.length;i++)if(s.contract===2&&i>=(s.rings||0))engine.draw(g.ring,transform(gates[i]),{emission:i===(s.rings||0)?.65:.18});
-  engine.draw(g.beacon,transform([rescueZone.x,ground,rescueZone.z]),{emission:1.1});
-  for(let i=12;i>=0;i--){
-   const life=(i*.41+s.elapsed*.5)%6,r=2.5+life*1.8;
-   engine.draw(g.smoke,transform([rescueZone.x+life*3,ground+3+life*22,rescueZone.z+Math.sin(i)*life],[i,life,0],[r,r*1.5,r]),{alpha:.29,emission:.18,soft:true});
+  // Low coastal marker: a bright point source and a narrow wind-carried ribbon.
+  // Suppress distant mission smoke after impact so it cannot pierce wreck smoke.
+  if(s.status!=='crashed'){
+   engine.draw(g.beacon,transform([rescueZone.x,ground,rescueZone.z]),{emission:2.8});
+   for(let i=10;i>=0;i--){
+    const life=(i*.31+s.elapsed*.28)%3.5,r=.55+life*.38;
+    engine.draw(g.smoke,transform([rescueZone.x+life*3.2,ground+2+life*8,rescueZone.z+life*.6],[i,life,0],[r,r*1.65,r*.65]),{alpha:.19*(1-life/4),emission:.10,soft:true});
+   }
   }
   for(let p of supplies){
    engine.draw(g.cargo,transform(p.pos));

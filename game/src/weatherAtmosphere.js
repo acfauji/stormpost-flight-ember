@@ -1,5 +1,6 @@
 // Windshield precipitation and branching, tapered electrical discharges in world space.
 import {mesh,ellipsoid,transform} from './webglEngine.js';
+import {terrainHeight} from './terrainWorld.js';
 export function buildAtmosphere(engine){
  const ash=mesh();
  for(let i=0;i<7;i++){
@@ -27,9 +28,11 @@ export function buildAtmosphere(engine){
  }
  branch([-490,900,-1530],[-550,65,-1510],1.8,2);
  return {draw(s,t){
-  for(let i=14;i>=0;i--){
-   const life=(i*.47+t*.12)%7,scale=8+life*7.5;
-   engine.draw(plume,transform([-1280+life*31+Math.sin(i*2.3)*life*2,800+life*28,-2050-life*11+Math.cos(i)*life*3],[life,i,0],[scale,scale*1.45,scale]),{alpha:.18,soft:true});
+  const crater=terrainHeight(-1280,-1950)+3;
+  for(let i=20;i>=0;i--){
+   const rise=i/20,drift=rise*rise;
+   const scale=6+rise*24;
+   engine.draw(plume,transform([-1280+drift*120+Math.sin(t*.18+i*.7)*rise*4,crater+rise*175,-1950-drift*38],[rise*.3,i*.6,0],[scale,scale*1.5,scale]),{alpha:.22*Math.pow(1-rise,1.3),soft:true});
   }
   projected=s.storm?branches.map(b=>({width:b.width,points:b.points.map(engine.project)})):[];
  },rain(ctx,w,h,t){

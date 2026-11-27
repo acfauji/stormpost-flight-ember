@@ -28,7 +28,7 @@ export function buildWorld(engine){
  const {x,y,z0,z1,width}=runway;box(structures,[x,y-8,(z0+z1)/2],[width+26,16,z0-z1+50],[.24,.26,.24]);box(structures,[x,y+.2,(z0+z1)/2],[width,.5,z0-z1],[.095,.12,.14]);
  for(let z=z0-60;z>z1+60;z-=95)box(structures,[x,y+.6,z],[2,.12,42],[.8,.81,.71]);for(let side of [-1,1]){box(structures,[x+side*(width/2-3),y+.5,(z0+z1)/2],[.8,.15,z0-z1-30],[.86,.84,.71]);for(let i=0;i<7;i++)box(structures,[x+side*(5+i*3.7),y+.7,z0-32],[2.4,.15,42],[.86,.86,.76]);for(let z=z0+180;z>z1;z-=58){let c=z>z0?[.9,.65,.22]:[.2,.65,1];ellipsoid(light,[x+side*(width/2+4),y+1,z],[.24,.12,.24],c,5,6);}for(let z=z0-80;z>z0-260;z-=18)box(structures,[x+side*7,y+.75,z],[1.4,.05,12],[.035,.04,.04]);}
  // Four ground-mounted PAPI housings at the touchdown zone: two white / two red.
- for(let i=0;i<4;i++){box(structures,[x-55-i*8,y+.65,z0-240],[1.6,.8,1.1],[.16,.18,.18]);ellipsoid(light,[x-55-i*8,y+.8,z0-239.4],[.65,.36,.18],i<2?[1,.94,.83]:[1,.025,.008],8,12);}
+ for(let i=0;i<4;i++){box(structures,[x-55-i*10,y+.85,z0-240],[2.2,1.1,1.5],[.16,.18,.18]);ellipsoid(light,[x-55-i*10,y+1.05,z0-239.1],[1.25,.72,.34],i<2?[1,.99,.91]:[1,.025,.008],10,14);}
  box(structures,[x+110,y+21,z0-350],[18,42,18],[.52,.5,.41]);box(structures,[x+110,y+45,z0-350],[29,10,27],[.09,.3,.34]);box(structures,[x+110,y+52,z0-350],[34,3,32],[.34,.39,.37]);rod(structures,[x+110,y+52,z0-350],[x+110,y+72,z0-350],.5,[.65,.64,.6]);box(structures,[x+120,y+5,z0-440],[60,10,40],[.4,.39,.33]);rod(structures,[x+80,y,z0-60],[x+80,y+23,z0-60],.7,[.8,.8,.7]);
  // Painted runway designator and deterministic coastal detail are physical world geometry.
  box(structures,[x-14,y+.9,z0-128],[2,.13,30],[.97,.96,.85]);

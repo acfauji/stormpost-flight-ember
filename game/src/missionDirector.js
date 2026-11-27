@@ -3,6 +3,14 @@ import {mesh,torus,rod,ellipsoid,box,quad,transform} from './webglEngine.js';
 import {terrainHeight,runway} from './terrainWorld.js';
 export const contracts=['FLARE RESCUE','REEF RELAY','CLIFF DELIVERY'];
 export const rescueZone={x:-300,z:-1150,radius:220};
+export const missionGates=[[-220,345,-550],[-400,420,-1450],[200,300,-2600]];
+export function radarObjectives(s){
+ const ring=s.rings||0,rescueDone=(s.rescues||0)>0||s.contract===3;
+ const gate=s.contract===2&&ring<missionGates.length?missionGates[ring]:null;
+ const leg=rescueDone?'LEG 3/3  RWY 18':s.contract===1||ring>=missionGates.length?'LEG 2/3  RESCUE > RWY 18':'LEG 1/3  GATE > RESCUE > RWY 18';
+ const target=rescueDone?[runway.x,runway.z0+280]:ring>=missionGates.length?[rescueZone.x,rescueZone.z]:gate?[gate[0],gate[2]]:[runway.x,runway.z0+280];
+ return {gate,beacon:rescueDone?null:[rescueZone.x,rescueZone.z],storm:[-525,-1550,900],runway:[runway.x,runway.z0+280],target,leg};
+}
 export function createMissionDirector(engine){
  const ring=mesh(),beacon=mesh(),canopy=mesh(),cargo=mesh(),smoke=mesh();
  torus(ring,[0,0,0],95,2.4,[1,.56,.09]);
@@ -34,8 +42,8 @@ export function createMissionDirector(engine){
   ellipsoid(smoke,[Math.sin(a)*.3,Math.cos(i*2.1)*.3,Math.cos(a)*.3],[.73+i%2*.15,1.1+i%3*.13,.76+i%2*.17],[.75+i%3*.035,.25+i%2*.035,.06],10,14);
  }
  const g=Object.fromEntries(Object.entries({ring,beacon,canopy,cargo,smoke}).map(([k,m])=>[k,engine.upload(m)]));
- const gates=[[-220,345,-550],[-400,420,-1450],[200,300,-2600]],supplies=[];
- return {supplies,gates,reset(){supplies.length=0;},drop(s){
+ const supplies=[];
+ return {supplies,gates:missionGates,reset(){supplies.length=0;},drop(s){
   if(s.status!=='flying'||supplies.length>=3)return false;
   supplies.push({pos:[...s.pos],velocity:[Math.sin(s.heading)*s.speed,0,-Math.cos(s.heading)*s.speed],landed:false,age:0});
   s.drop=true;if(s.contract===2&&s.rings>0)s.contract=1;s.event='SUPPLY CHUTE AWAY — WATCH DRIFT';return true;
@@ -53,7 +61,7 @@ export function createMissionDirector(engine){
     if(success){s.score+=1200;s.rescues=(s.rescues||0)+1;s.contract=3;}
    }
   }
-  const target=gates[s.rings||0];
+  const target=missionGates[s.rings||0];
   if(s.contract===2&&target&&Math.hypot(s.pos[0]-target[0],s.pos[1]-target[1],s.pos[2]-target[2])<95){
    s.rings=(s.rings||0)+1;s.score+=400;s.event=s.rings===3?'RELAY COMPLETE — RETURN RUNWAY 18':'GATE CLEARED +400 — RESCUE BEACON AHEAD';
   }
@@ -68,13 +76,13 @@ export function createMissionDirector(engine){
   const W=ctx.canvas.width,H=ctx.canvas.height;
   ctx.beginPath();ctx.rect(0,H*.465,W,H*.235);ctx.clip();
   for(let i=35;i>=0;i--){
-   const t=i/35,drift=t*t*86;
-   const position=[stormFlare.x-drift+Math.sin(t*9)*t*5,stormFlare.y+3.2+t*48,stormFlare.z-t*12];
+   const t=i/35,drift=Math.pow(t,1.7)*126+Math.sin(t*7.5)*t*15;
+   const position=[stormFlare.x-drift,stormFlare.y+3.2+t*58,stormFlare.z-t*12];
    const p=engine.project(position);
    const edge=engine.project([position[0]+1,position[1],position[2]]);
    if(!p.visible)continue;
-   const r=Math.max(3,Math.min(17,Math.hypot(edge.x-p.x,edge.y-p.y)*(2.5+t*11)));
-   const opacity=.39*Math.pow(1-t,.55),red=Math.round(255-t*81),warm=Math.round(99+t*53),blue=Math.round(29+t*108);
+   const r=Math.max(3,Math.min(22,Math.hypot(edge.x-p.x,edge.y-p.y)*(3.2+t*15)));
+   const opacity=.47*Math.pow(1-t,.48),red=Math.round(255-t*91),warm=Math.round(102+t*62),blue=Math.round(31+t*119);
    const puff=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,r);
    puff.addColorStop(0,'rgba('+red+','+warm+','+blue+','+opacity+')');
    puff.addColorStop(.42,'rgba('+red+','+warm+','+blue+','+opacity*.68+')');
@@ -90,7 +98,7 @@ export function createMissionDirector(engine){
   }
   ctx.restore();
  },draw(s){
-  for(let i=0;i<gates.length;i++)if(s.contract===2&&i>=(s.rings||0))engine.draw(g.ring,transform(gates[i]),{emission:i===(s.rings||0)?.65:.18});
+  for(let i=0;i<missionGates.length;i++)if(s.contract===2&&i>=(s.rings||0))engine.draw(g.ring,transform(missionGates[i]),{emission:i===(s.rings||0)?.65:.18});
   // Low coastal marker: a bright point source and a narrow wind-carried ribbon.
   // Suppress distant mission smoke after impact so it cannot pierce wreck smoke.
   if(s.status!=='crashed'){

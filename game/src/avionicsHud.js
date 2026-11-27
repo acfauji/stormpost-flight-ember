@@ -1,5 +1,6 @@
 // Translucent flight-deck widgets: sparse primary data, navigation and three-contract debrief.
-import {contracts} from './missionDirector.js';
+import {contracts,radarObjectives} from './missionDirector.js';
+import {drawTacticalRadar} from './tacticalRadar.js';
 const cyan='#a9e5e9',amber='#ffca83',ink='rgba(9,17,25,0.78)';
 function glass(ctx,x,y,w,h){
  ctx.fillStyle=ink;ctx.strokeStyle='rgba(176,217,218,.25)';ctx.lineWidth=1;
@@ -13,8 +14,11 @@ export function drawAvionics(ctx,s,w,h){
  ctx.save();ctx.scale(w/1280,h/800);ctx.textBaseline='alphabetic';ctx.textAlign='left';
  glass(ctx,24,22,298,70);text(ctx,'STORMPOST',40,53,27,'#fff2db','700');
  text(ctx,'ISLEWATCH  /  TWIN-TURBOPROP',41,76,11,amber);
- if(s.status!=='crashed'){glass(ctx,920,22,336,70);text(ctx,contracts[s.contract-1]||contracts[0],936,48,16,'#fff0d6','700');
- text(ctx,s.route,936,74,11,cyan);text(ctx,'SCORE '+s.score,1135,74,11,amber,'700');}
+ if(s.status!=='crashed'){
+  glass(ctx,920,18,336,92);text(ctx,contracts[s.contract-1]||contracts[0],936,42,16,'#fff0d6','700');
+  text(ctx,radarObjectives(s).leg,936,61,10,amber,'700');
+  text(ctx,s.route,936,82,10,cyan);ctx.textAlign='right';text(ctx,'SCORE '+s.score,1238,82,11,amber,'700');ctx.textAlign='left';
+ }
  const speed=Math.round(s.speed*1.944),alt=Math.round(s.pos[1]*3.281),heading=Math.round(((180-s.heading*180/Math.PI)%360+360)%360);
  ctx.textAlign='center';if(s.status!=='crashed'){glass(ctx,590,24,100,58);text(ctx,String(heading).padStart(3,'0')+'°',640,51,23,cyan,'700');text(ctx,'HDG MAG',640,69,10);}
  for(let [x,label,value,unit] of s.status==='crashed'?[]:[[188,'IAS',speed,'KT'],[1092,'ALT',alt,'FT']]){
@@ -39,17 +43,13 @@ export function drawAvionics(ctx,s,w,h){
   text(ctx,'FUEL '+Math.round(s.fuel)+'%   HULL '+Math.round(s.hull)+'%',39,693,12,'#e4f5ed','700');
   text(ctx,'CROSSWIND '+Math.abs(s.wind).toFixed(1)+' M/S',39,717,10);
   text(ctx,'C  COCKPIT     V  ROUTE',39,738,10,'#94b4bc');
-  const rx=1190,ry=670;ctx.fillStyle=ink;ctx.beginPath();ctx.arc(rx,ry,58,0,Math.PI*2);ctx.fill();
-  ctx.strokeStyle='rgba(139,203,205,.32)';for(let r of [20,39,58]){ctx.beginPath();ctx.arc(rx,ry,r,0,Math.PI*2);ctx.stroke();}
-  ctx.fillStyle=s.storm?'rgba(255,182,83,.33)':'rgba(92,180,160,.25)';ctx.beginPath();ctx.ellipse(rx-12,ry-14,25,17,-.5,0,Math.PI*2);ctx.fill();
-  ctx.strokeStyle=cyan;ctx.beginPath();ctx.moveTo(rx,ry-8);ctx.lineTo(rx-4,ry+5);ctx.lineTo(rx+4,ry+5);ctx.closePath();ctx.stroke();
-  ctx.textAlign='center';text(ctx,'WX / 5 NM',rx,748,10);
+  drawTacticalRadar(ctx,s,1190,667);
  }
  ctx.textAlign='center';
  if(s.warning&&s.status==='flying'&&(s.storm||!s.warning.startsWith('WIND SHEAR'))){
   glass(ctx,425,112,430,29);text(ctx,s.warning,640,132,12,amber,'700');
  }
- if(s.event&&s.status==='flying'){const ey=s.camera==='cockpit'?515:(!s.storm&&s.contract===2&&s.rings===1?580:165);glass(ctx,370,ey-19,540,30);text(ctx,s.event,640,ey+1,11,amber);}
+ if(s.event&&s.status==='flying'){const ey=s.camera==='cockpit'?168:(!s.storm&&s.contract===2&&s.rings===1?580:165);glass(ctx,370,ey-19,540,30);text(ctx,s.event,640,ey+1,11,amber);}
  if(s.status!=='flying'){
   const cx=s.status==='crashed'?334:640;glass(ctx,cx-310,635,620,119);
   const lost=s.status==='crashed';text(ctx,lost?'AIRFRAME LOST  /  HULL 0%':s.flare,cx,661,20,lost?'#ffba80':cyan,'700');

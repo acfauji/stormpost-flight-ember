@@ -35,28 +35,43 @@ const vec3 sunlight=vec3(1.,.72,.38);
 const vec3 sun=vec3(-.59,.25,-.77);
 ${noiseField}
 vec3 aerialPerspective(vec3 color,vec3 view){
- float haze=1.-exp(-length(eye-world)*(.00012+storm*.00017));
- float forward=pow(max(dot(-view,normalize(sun)),0.),8.);
- vec3 dusk=mix(vec3(.47,.60,.66),vec3(.88,.65,.42),forward*.7);
- dusk=mix(dusk,vec3(.25,.34,.42),storm*.7);
- return mix(color,dusk,min(.92,haze));
+ float distance=length(eye-world);
+ float haze=1.-exp(-distance*(.000105+storm*.00019));
+ float forward=max(dot(-view,normalize(sun)),0.);
+ float horizon=pow(1.-abs(normalize(view).y),2.);
+ vec3 dusk=mix(vec3(.105,.13,.25),vec3(.91,.49,.26),max(pow(forward,5.)*.62,horizon*.58));
+ dusk=mix(dusk,vec3(.24,.29,.39),storm*.68);
+ return mix(color,dusk,min(.88,haze));
 }
 float waveHeight(vec2 p){return fbm(p+vec2(time*.055,-time*.038))*.65+fbm(p*.51-vec2(time*.024,0.))*.35;}
 void main(){
  vec3 N=normalize(normal),L=normalize(sun),E=normalize(eye-world);
- vec3 albedo=col;
+ vec3 albedo=col,terrainEmission=vec3(0.);
  if(terrain>.5){
   float slope=1.-max(N.y,0.);
-  float variation=fbm(world.xz*.012);
-  vec3 grass=mix(vec3(.16,.25,.16),vec3(.40,.43,.24),variation);
-  vec3 basalt=mix(vec3(.15,.18,.20),vec3(.37,.35,.30),variation);
-  float rock=smoothstep(.13,.45,slope)+smoothstep(300.,800.,world.y)*.45;
-  albedo=mix(grass,basalt,clamp(rock,0.,1.));
-  albedo=mix(vec3(.63,.57,.42),albedo,smoothstep(3.,27.,world.y));
+  float elevation=world.y;
+  float variation=fbm(world.xz*.010);
+  float warp=fbm(world.xz*.0045)*16.;
+  float strata=.5+.5*sin((world.y+world.x*.075+world.z*.021+warp)*.115);
+  vec3 grass=mix(vec3(.10,.22,.14),vec3(.34,.39,.20),variation);
+  vec3 highland=mix(vec3(.13,.28,.18),vec3(.38,.43,.25),fbm(world.xz*.018));
+  vec3 basalt=mix(vec3(.075,.09,.12),vec3(.23,.25,.27),variation);
+  basalt*=.68+strata*.47;
+  float rock=clamp(smoothstep(.12,.43,slope)+smoothstep(280.,760.,elevation)*.62,0.,1.);
+  float alpine=smoothstep(250.,480.,elevation)*(1.-smoothstep(1050.,1420.,elevation));
+  albedo=mix(grass,highland,alpine*.9);
+  albedo=mix(albedo,basalt,rock);
+  float beach=(1.-smoothstep(7.,35.,elevation))*smoothstep(-1.,4.,elevation);
+  albedo=mix(albedo,vec3(.60,.48,.32),beach*.9);
+  float caldera=exp(-pow((length(world.xz-vec2(-1280.,-2050.))-102.)/27.,2.));
+  float rim=caldera*smoothstep(120.,300.,elevation);
+  albedo=mix(albedo,vec3(.78,.29,.075),rim*.55);
+  terrainEmission=vec3(1.,.25,.035)*rim*.48;
  }
  float diffuse=max(dot(N,L),0.);
  float hemi=.5+.5*N.y;
  vec3 color=albedo*(vec3(.21,.27,.32)+vec3(.23,.27,.30)*hemi+sunlight*diffuse*.76);
+ color+=terrainEmission;
  float facing=max(dot(N,E),0.);
  float highlight=pow(max(dot(N,normalize(L+E)),0.),mix(32.,90.,metal));
  color+=sunlight*highlight*(.06+metal*.4);
@@ -106,23 +121,29 @@ ${noiseField}
 float cloudDensity(vec3 p){
  float base=fbm(p.xz*.83+vec2(time*.0013,0.));
  float towers=fbm(p.xz*1.67+vec2(4.1,11.));
+ float shelf=fbm(p.xz*.47+vec2(-time*.0008,7.));
  float height=p.y;
  float crown=.38+towers*.85+storm*.26;
  float profile=smoothstep(.02,.19,height)*(1.-smoothstep(crown-.25,crown,height));
  float body=smoothstep(.38-storm*.1,.64,base+towers*.18);
+ float bank=smoothstep(.50,.72,shelf+towers*.14)*(1.-smoothstep(.83,.98,height));
  float erosion=fbm(p.xz*4.3+vec2(height*2.4,-height*1.8));
- return max(0.,body*profile-erosion*.18)*1.7;
+ return max(0.,(body*profile+bank*.38*(1.-profile*.3))-erosion*.16)*1.55;
 }
 void main(){
  vec3 ray=normalize(forward+right*uv.x*aspect*field+up*uv.y*field);
  vec3 L=normalize(vec3(-.59,.25,-.77));
  float height=max(ray.y,0.);
- vec3 sky=mix(vec3(.89,.66,.44),vec3(.14,.33,.50),pow(smoothstep(0.,.83,height),.6));
+ float zenith=pow(smoothstep(.012,.88,height),.72);
+ vec3 sky=mix(vec3(.94,.50,.25),vec3(.075,.09,.24),zenith);
  float angle=max(dot(ray,L),0.);
- sky+=vec3(.72,.35,.12)*pow(angle,18.)*.3;
- sky=mix(sky,vec3(.18,.26,.34)+height*.06,storm*.84);
- sky+=vec3(1.,.69,.31)*pow(angle,350.)*(1.-storm)*.5;
- sky=mix(sky,vec3(1.,.86,.55),smoothstep(.9994,.99985,angle)*(1.-storm));
+ float haze=exp(-height*34.)*(1.-storm*.72);
+ sky=mix(sky,vec3(.98,.65,.37),haze*.42);
+ sky+=vec3(.30,.34,.62)*pow(angle,7.)*.075;
+ sky+=vec3(1.,.43,.13)*pow(angle,20.)*.34*(1.-storm*.55);
+ sky=mix(sky,vec3(.15,.20,.32)+height*.055,storm*.82);
+ sky+=vec3(1.,.54,.25)*pow(angle,260.)*(1.-storm)*.40;
+ sky=mix(sky,vec3(.99,.77,.50),smoothstep(.9993,.99985,angle)*(1.-storm)*.84);
  if(ray.y>.015){
   float transmittance=1.;vec3 light=vec3(0.);
   for(int i=0;i<10;i++){
@@ -142,5 +163,7 @@ void main(){
  }
  float flash=pow(max(0.,sin(time*1.7)),38.)*storm;
  sky+=vec3(.25,.33,.43)*flash*exp(-length(uv-vec2(-.24,.3))*2.);
- fragment=vec4(sky,1.);
+ float peak=max(max(sky.r,sky.g),sky.b);
+ sky/=1.+max(peak-.82,0.)*.72;
+ fragment=vec4(max(sky,vec3(0.)),1.);
 }`;

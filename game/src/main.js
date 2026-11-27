@@ -38,7 +38,7 @@ function integrateFlight(){
   updateAerodynamics(state,pilotInput(),dt);
   resolveContact(state,dt);missions.update(state,dt);
  }
- state.storm=state.route==='STORM CORRIDOR'&&state.pos[2]<-420&&state.pos[0]<100&&state.status==='flying';
+ state.storm=state.route==='STORM CORRIDOR'&&state.pos[2]<-700&&state.pos[0]<100&&state.status==='flying';
  audio.update(state);
 }
 function advanceFlight(ticks=1){
@@ -56,6 +56,7 @@ function renderFlight(){
  if(state.camera==='cockpit')cockpit.draw(state);else drawAircraft(state,clock);
  impact.draw(state,clock);ctx.clearRect(0,0,w,h);
  if(state.storm)atmosphere.rain(ctx,w,h,clock);
+ missions.drawRescueRibbon(ctx,state);
  if(state.camera==='cockpit')drawCockpitInstruments(ctx,state,w,h);
  drawAvionics(ctx,state,w,h);
  document.getElementById('flight-status').textContent=state.event||state.warning||state.status;

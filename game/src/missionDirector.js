@@ -11,6 +11,9 @@ export function createMissionDirector(engine){
   rod(ring,[Math.cos(a)*103,Math.sin(a)*103,0],[Math.cos(a)*110,Math.sin(a)*110,0],.65,[1,.81,.38],5);
  }
  const ground=terrainHeight(rescueZone.x,rescueZone.z);
+ // A coastal promontory remains visible through the storm-approach windshield.
+ const stormFlare={x:-525,z:-1550};
+ stormFlare.y=terrainHeight(stormFlare.x,stormFlare.z);
  box(beacon,[0,.8,0],[2,1.6,2],[.4,.17,.07]);
  rod(beacon,[0,0,0],[0,3,0],.27,[1,.22,.03],8,.08);
  ellipsoid(beacon,[0,3.2,0],[.48,.6,.48],[1,.72,.28],8,12);
@@ -57,15 +60,46 @@ export function createMissionDirector(engine){
   if(s.gear&&s.status==='flying'&&Math.abs(s.pos[0]-runway.x)<60&&s.pos[2]>runway.z1&&s.pos[2]<200){
    s.event='FINAL 18 • FLAPS 30 • GEAR DOWN';
   }
+ },drawRescueRibbon(ctx,s){
+  if(s.camera!=='cockpit'||!s.storm||s.status!=='flying')return;
+  // World-anchored, camera-facing smoke; deliberately unlit by storm fog.
+  // Draw beneath cockpit/HUD so terrain, dials and altitude stay authoritative.
+  ctx.save();
+  const W=ctx.canvas.width,H=ctx.canvas.height;
+  ctx.beginPath();ctx.rect(0,H*.465,W,H*.235);ctx.clip();
+  for(let i=35;i>=0;i--){
+   const t=i/35,drift=t*t*86;
+   const position=[stormFlare.x-drift+Math.sin(t*9)*t*5,stormFlare.y+3.2+t*48,stormFlare.z-t*12];
+   const p=engine.project(position);
+   const edge=engine.project([position[0]+1,position[1],position[2]]);
+   if(!p.visible)continue;
+   const r=Math.max(3,Math.min(17,Math.hypot(edge.x-p.x,edge.y-p.y)*(2.5+t*11)));
+   const opacity=.39*Math.pow(1-t,.55),red=Math.round(255-t*81),warm=Math.round(99+t*53),blue=Math.round(29+t*108);
+   const puff=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,r);
+   puff.addColorStop(0,'rgba('+red+','+warm+','+blue+','+opacity+')');
+   puff.addColorStop(.42,'rgba('+red+','+warm+','+blue+','+opacity*.68+')');
+   puff.addColorStop(1,'rgba('+red+','+warm+','+blue+',0)');
+   ctx.fillStyle=puff;ctx.fillRect(p.x-r,p.y-r,r*2,r*2);
+  }
+  const core=engine.project([stormFlare.x,stormFlare.y+3.2,stormFlare.z]);
+  if(core.visible){
+   ctx.globalCompositeOperation='lighter';
+   const glow=ctx.createRadialGradient(core.x,core.y,0,core.x,core.y,13);
+   glow.addColorStop(0,'rgba(255,214,124,.98)');glow.addColorStop(.22,'rgba(255,70,12,.86)');glow.addColorStop(1,'rgba(255,55,0,0)');
+   ctx.fillStyle=glow;ctx.fillRect(core.x-13,core.y-13,26,26);
+  }
+  ctx.restore();
  },draw(s){
   for(let i=0;i<gates.length;i++)if(s.contract===2&&i>=(s.rings||0))engine.draw(g.ring,transform(gates[i]),{emission:i===(s.rings||0)?.65:.18});
   // Low coastal marker: a bright point source and a narrow wind-carried ribbon.
   // Suppress distant mission smoke after impact so it cannot pierce wreck smoke.
   if(s.status!=='crashed'){
-   engine.draw(g.beacon,transform([rescueZone.x,ground,rescueZone.z]),{emission:2.8});
-   for(let i=10;i>=0;i--){
-    const life=(i*.31+s.elapsed*.28)%3.5,r=.55+life*.38;
-    engine.draw(g.smoke,transform([rescueZone.x+life*3.2,ground+2+life*8,rescueZone.z+life*.6],[i,life,0],[r,r*1.65,r*.65]),{alpha:.19*(1-life/4),emission:.10,soft:true});
+   const rescueView=s.camera==='cockpit'&&s.storm;
+   const flareScale=1,flare=rescueView?stormFlare:{x:rescueZone.x,y:ground,z:rescueZone.z};
+   engine.draw(g.beacon,transform([flare.x,flare.y,flare.z],[0,0,0],[flareScale,flareScale,flareScale]),{emission:rescueView?5:2.8});
+   for(let i=rescueView?-1:10;i>=0;i--){
+    const life=(i*.31+s.elapsed*.28)%3.5,r=(.55+life*.38)*(rescueView?2.2:1);
+    engine.draw(g.smoke,transform([rescueZone.x+life*3.2,ground+2+life*(rescueView?15:8),rescueZone.z+life*.6],[i,life,0],[r,r*1.65,r*.65]),{alpha:(rescueView?.48:.19)*(1-life/4),emission:rescueView?.7:.10,soft:true});
    }
   }
   for(let p of supplies){

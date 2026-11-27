@@ -46,10 +46,10 @@ export function drawAvionics(ctx,s,w,h){
   ctx.textAlign='center';text(ctx,'WX / 5 NM',rx,748,10);
  }
  ctx.textAlign='center';
- if(s.warning&&s.status==='flying'){
+ if(s.warning&&s.status==='flying'&&(s.storm||!s.warning.startsWith('WIND SHEAR'))){
   glass(ctx,425,112,430,29);text(ctx,s.warning,640,132,12,amber,'700');
  }
- if(s.event&&s.status==='flying'){const ey=s.camera==='cockpit'?515:165;glass(ctx,370,ey-19,540,30);text(ctx,s.event,640,ey+1,11,amber);}
+ if(s.event&&s.status==='flying'){const ey=s.camera==='cockpit'?515:(!s.storm&&s.contract===2&&s.rings===1?580:165);glass(ctx,370,ey-19,540,30);text(ctx,s.event,640,ey+1,11,amber);}
  if(s.status!=='flying'){
   const cx=s.status==='crashed'?334:640;glass(ctx,cx-310,635,620,119);
   const lost=s.status==='crashed';text(ctx,lost?'AIRFRAME LOST  /  HULL 0%':s.flare,cx,661,20,lost?'#ffba80':cyan,'700');
